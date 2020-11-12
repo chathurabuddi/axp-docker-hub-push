@@ -1,0 +1,27 @@
+name: igw-push-to-docker-hub
+on: 
+  workflow_dispatch:
+    inputs:
+      pulltag:
+        description: 'Tag for pulling from Docker Registry'     
+        required: true
+      pushtag:
+        description: 'Tag for pushing to Docker Hub'
+        required: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Registry
+        run: docker login -u ${{ secrets.REGISTRY_UN }} -p ${{ secrets.REGISTRY_PW }} https://${{ secrets.REGISTRY_URL }}
+        
+      - name: Pull docker image from Jenkins CI
+        run: docker pull ${{ secrets.REGISTRY_URL }}/ci-cd-igw-images:${{ github.event.inputs.pulltag }}
+      
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_HUB_UN }} -p ${{ secrets.DOCKER_HUB_PW }}
+      
+      - name: Push docker image to Docker Hub
+        run: |
+          docker tag ${{ secrets.REGISTRY_URL }}/ci-cd-igw-images:${{ github.event.inputs.pulltag }} ${{ secrets.DOCKER_HUB_UN }}/igw:${{ github.event.inputs.pushtag }}
+          docker push ${{ secrets.DOCKER_HUB_UN }}/igw:${{ github.event.inputs.pushtag }}
